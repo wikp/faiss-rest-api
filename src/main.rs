@@ -1,5 +1,4 @@
 #![feature(proc_macro_hygiene, decl_macro)]
-use std::error::Error;
 
 use clap::{App, Arg};
 use faiss::ConcurrentIndex;
