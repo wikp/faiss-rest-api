@@ -1,20 +1,12 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-extern crate clap;
-extern crate faiss;
-#[macro_use]
-extern crate rocket;
-#[macro_use]
-extern crate rocket_contrib;
-#[macro_use]
-extern crate serde_derive;
-
 use clap::{App, Arg};
 use faiss::ConcurrentIndex;
 use faiss::FlatIndex;
-use rocket::State;
+use rocket::{State, post, routes};
 use rocket_contrib::json::{Json, JsonValue};
-
+use rocket_contrib::{json};
+use serde::{Deserialize, Serialize};
 struct Boot {
     index: FlatIndex
 }
