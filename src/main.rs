@@ -1,8 +1,9 @@
 #![feature(proc_macro_hygiene, decl_macro)]
+use std::error::Error;
 
 use clap::{App, Arg};
 use faiss::ConcurrentIndex;
-use faiss::FlatIndex;
+use faiss::{FlatIndex};
 use rocket::{State, post, routes};
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_contrib::{json};
@@ -20,7 +21,7 @@ struct Query {
 #[derive(Serialize)]
 #[derive(Debug)]
 struct Neighbor {
-    id: i64,
+    id: Option<u64>,
     score: f32,
 }
 
@@ -53,13 +54,17 @@ fn index(query: Json<Query>, boot: State<Boot>) -> JsonValue {
     let mut result: Vec<SingleResult> = Vec::new();
 
     for it in dist_chunked.zip(lab_chunked).zip(query.vectors.iter()) {
-        let l = it.0;
+        let (l, vec) = it;
+        let (ids, scores) = l;
         let sr = SingleResult {
-            neighbors: l.0.iter().zip(l.1).map(|z| Neighbor {
-                id: z.1.to_owned(),
-                score: z.0.to_owned(),
+            neighbors: ids.iter().zip(scores)
+            .filter(|(_score, id)| id.get().is_some())
+            .map(|(score, id)|
+                Neighbor {
+                id: id.get(), //The above filter should gaurd this being none
+                score: score.to_owned(),
             }).collect(),
-            vector: it.1.to_owned(),
+            vector: vec.to_owned(),
         };
         result.push(sr);
     }
@@ -87,7 +92,7 @@ fn main() {
 
     rocket::ignite()
         .manage(Boot {
-            index: index.as_flat().unwrap()
+            index: index.into_flat().unwrap()
         })
         .mount("/", routes![index]).launch();
 }
